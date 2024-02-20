@@ -3,11 +3,6 @@ import { google, sheets_v4 } from "googleapis";
 import { GoogleAuth } from "google-auth-library";
 import * as _ from "lodash";
 
-type List = {
-  name: string;
-  amount: number;
-};
-
 enum SelectColumn {
   budget_list_from_income = 0,
   budget_list_form_subsidize = 2,

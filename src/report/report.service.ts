@@ -1,15 +1,16 @@
 import { Injectable } from "@nestjs/common";
 import axios from "axios";
+import { ReportWebsiteDto } from "./dto/dto.budget";
 
 @Injectable()
 export class ReportService {
-  async send(message: string) {
+  async send(body: ReportWebsiteDto) {
     try {
       const data = {
         content: null,
         embeds: [
           {
-            description: message,
+            description: body.message,
             color: 5814783,
             timestamp: new Date().toJSON(),
           },

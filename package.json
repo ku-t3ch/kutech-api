@@ -29,10 +29,13 @@
     "@nestjs/swagger": "^7.3.0",
     "axios": "^1.6.7",
     "cache-manager": "^5.4.0",
+    "form-data": "^4.0.0",
     "google-auth-library": "^9.6.3",
     "googleapis": "^133.0.0",
     "lodash": "^4.17.21",
+    "nestjs-zod": "^3.0.0",
     "reflect-metadata": "^0.1.13",
+    "request-ip": "^3.3.0",
     "rxjs": "^7.2.0"
   },
   "devDependencies": {

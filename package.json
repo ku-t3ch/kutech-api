@@ -27,6 +27,7 @@
     "@nestjs/mapped-types": "*",
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/swagger": "^7.3.0",
+    "axios": "^1.6.7",
     "cache-manager": "^5.4.0",
     "google-auth-library": "^9.6.3",
     "googleapis": "^133.0.0",

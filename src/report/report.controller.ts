@@ -8,17 +8,17 @@ import {
 } from "@nestjs/common";
 import { ReportService } from "./report.service";
 import { ApiTags } from "@nestjs/swagger";
-import { ReportWebsiteDto } from "./dto/dto.budget";
 import * as requestIp from "request-ip";
 import * as FormData from "form-data";
 import axios from "axios";
+import { ReportWebsiteRequestDto } from "./dto/reportwebsite.request.dto";
 
 @ApiTags("Report API")
 @Controller("report")
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}
   @Post("/website")
-  async send(@Body() body: ReportWebsiteDto, @Req() req) {
+  async send(@Body() body: ReportWebsiteRequestDto, @Req() req) {
     try {
       const detectedIp = requestIp.getClientIp(req);
       const formData = new FormData();

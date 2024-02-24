@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import axios from "axios";
-import { ReportWebsiteDto } from "./dto/dto.budget";
+import { ReportWebsiteRequestDto } from "./dto/reportwebsite.request.dto";
 
 @Injectable()
 export class ReportService {
-  async send(body: ReportWebsiteDto) {
+  async send(body: ReportWebsiteRequestDto) {
     try {
       const data = {
         content: null,

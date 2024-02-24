@@ -9,7 +9,8 @@ async function bootstrap() {
   const config = new DocumentBuilder()
     .setTitle("KUTech API")
     .setVersion("1.0")
-    .addServer("/kutechapi")
+    .addServer("/kutechapi", "For production")
+    .addServer("/", "For development")
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup("docs", app, document);

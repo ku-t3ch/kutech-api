@@ -3,7 +3,8 @@ import { google, sheets_v4 } from "googleapis";
 import { GoogleAuth } from "google-auth-library";
 import * as _ from "lodash";
 import { CACHE_MANAGER, Cache } from "@nestjs/cache-manager";
-
+import replaceAll from "src/utils/replaceAll";
+import cachingSheet from "src/utils/CachingSheet";
 
 enum SelectColumn {
   budget_list_from_income = 0,
@@ -45,63 +46,59 @@ export class BudgetService {
   }
 
   async getBudget() {
-    const result_raw: string = await this.cacheManager.get("budgetData");
-    let result;
-    if (result_raw) {
-      result = JSON.parse(result_raw);
-      console.log("budget : cache hit");
-    } else {
-      result = await this.sheets_service.spreadsheets.values.get({
-        spreadsheetId: process.env.BUDGET_SPREADS_SHEET_ID,
-        range: "Main Page!A:J",
-      });
-      await this.cacheManager.set("budgetData", JSON.stringify(result), 1000 * 60 * 60 * 3);
-      console.log("budget : cache miss");
-    }
+    const result: any = await cachingSheet(
+      "Main Page!A:J",
+      "budget",
+      this.sheets_service,
+      this.cacheManager
+    );
 
     return {
-      remaining_budget: parseFloat(
-        result.data.values?.[0]?.[5].replace(",", "") ?? 0
-      ),
-      budget_all: parseFloat(
-        result.data.values?.[1]?.[3].replace(",", "") ?? 0
-      ),
-      expenses_all: parseFloat(
-        result.data.values?.[1]?.[7].replace(",", "") ?? 0
-      ),
-      budget_from_income: parseFloat(
-        result.data.values?.[3]?.[1].replace(",", "") ?? 0
-      ),
-      budget_from_subsidize: parseFloat(
-        result.data.values?.[3]?.[3].replace(",", "") ?? 0
-      ),
-      expenses_from_income: parseFloat(
-        result.data.values?.[3]?.[5].replace(",", "") ?? 0
-      ),
-      expanses_from_subsidize: parseFloat(
-        result.data.values?.[3]?.[7].replace(",", "") ?? 0
-      ),
-      refund: parseFloat(result.data.values?.[1]?.[9].replace(",", "") ?? 0),
+      remaining_budget: parseFloat(result[0]?.[5].replace(",", "") ?? 0),
+      budget_all: parseFloat(result[1]?.[3].replace(",", "") ?? 0),
+      expenses_all: parseFloat(result[1]?.[7].replace(",", "") ?? 0),
+      budget_from_income: parseFloat(result[3]?.[1].replace(",", "") ?? 0),
+      budget_from_subsidize: parseFloat(result[3]?.[3].replace(",", "") ?? 0),
+      expenses_from_income: parseFloat(result[3]?.[5].replace(",", "") ?? 0),
+      expanses_from_subsidize: parseFloat(result[3]?.[7].replace(",", "") ?? 0),
+      refund: parseFloat(result[1]?.[9].replace(",", "") ?? 0),
       budget_list_from_income: getList(
-        result.data.values,
+        result,
         SelectColumn.budget_list_from_income
       ),
       budget_list_form_subsidize: getList(
-        result.data.values,
+        result,
         SelectColumn.budget_list_form_subsidize
       ),
       expenses_list_from_income: getList(
-        result.data.values,
+        result,
         SelectColumn.expenses_list_from_income
       ),
       expenses_list_from_subsidize: getList(
-        result.data.values,
+        result,
         SelectColumn.expenses_list_form_subsidize
       ),
-      refund_list: getList(
-        result.data.values,
-        SelectColumn.refund_list_from_income
-      ),
+      refund_list: getList(result, SelectColumn.refund_list_from_income),
     };
+  }
+
+  async getBudgetDetail() {
+    const result_raw: any = await cachingSheet(
+      "Detail!A:F",
+      "budget_detail",
+      this.sheets_service,
+      this.cacheManager
+    );
+
+    const headers = result_raw[0];
+    const result = _.map(result_raw.slice(1), (row) => {
+      const obj = {};
+      headers.forEach((header: string, index) => {
+        obj[replaceAll(header, " ", "_").toLowerCase()] = ["Price per pcs.","Pcs.","Total"].includes(header) ? parseFloat(row[index].replace(",", "") ?? 0) : row[index];
+      });
+      return obj;
+    });
+
+    return result;
   }
 }

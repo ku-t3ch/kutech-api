@@ -7,14 +7,15 @@ import {
   Req,
 } from "@nestjs/common";
 import { ReportService } from "./report.service";
-import { ApiTags } from "@nestjs/swagger";
+import { ApiExcludeController, ApiTags } from "@nestjs/swagger";
 import * as requestIp from "request-ip";
 import * as FormData from "form-data";
 import axios from "axios";
 import { ReportWebsiteRequestDto } from "./dto/reportwebsite.request.dto";
 
-@ApiTags("Report API")
 @Controller("report")
+@ApiTags("Report API")
+@ApiExcludeController()
 export class ReportController {
   constructor(private readonly reportService: ReportService) {}
   @Post("/website")

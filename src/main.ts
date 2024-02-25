@@ -7,7 +7,7 @@ async function bootstrap() {
   app.enableCors();
 
   const config = new DocumentBuilder()
-    .setTitle("KUTech API")
+    .setTitle("KUTech Open API")
     .setVersion("1.0")
     .addServer("/kutechapi", "For production")
     .addServer("/", "For development")

@@ -5,30 +5,9 @@ import * as _ from "lodash";
 import { CACHE_MANAGER, Cache } from "@nestjs/cache-manager";
 import replaceAll from "src/utils/replaceAll";
 import cachingSheet from "src/utils/CachingSheet";
-
-enum SelectColumn {
-  budget_list_from_income = 0,
-  budget_list_form_subsidize = 2,
-  expenses_list_from_income = 4,
-  expenses_list_form_subsidize = 6,
-  refund_list_from_income = 8,
-}
-
-const getList = (values: string[][], selectColumn: SelectColumn) => {
-  const groupedData = _.chain(values?.slice(6))
-    .filter((row) => row[selectColumn] !== "" && !!row[selectColumn + 1]) // Remove empty rows
-    .map((row) => ({
-      name: row[selectColumn],
-      amount: parseFloat(String(row[selectColumn + 1]).replace(",", "")) ?? 0,
-    }))
-    .groupBy("name")
-    .map((values, name) => ({
-      name,
-      amount: _.sumBy(values, "amount"),
-    }))
-    .value();
-  return groupedData;
-};
+import { SelectColumnEnum } from "./enums/SelectColumn";
+import getListBudget from "./utils/GetListBudget";
+import * as moment from "moment";
 
 @Injectable()
 export class BudgetService {
@@ -62,23 +41,26 @@ export class BudgetService {
       expenses_from_income: parseFloat(result[3]?.[5].replace(",", "") ?? 0),
       expanses_from_subsidize: parseFloat(result[3]?.[7].replace(",", "") ?? 0),
       refund: parseFloat(result[1]?.[9].replace(",", "") ?? 0),
-      budget_list_from_income: getList(
+      budget_list_from_income: getListBudget(
         result,
-        SelectColumn.budget_list_from_income
+        SelectColumnEnum.budget_list_from_income
       ),
-      budget_list_form_subsidize: getList(
+      budget_list_form_subsidize: getListBudget(
         result,
-        SelectColumn.budget_list_form_subsidize
+        SelectColumnEnum.budget_list_form_subsidize
       ),
-      expenses_list_from_income: getList(
+      expenses_list_from_income: getListBudget(
         result,
-        SelectColumn.expenses_list_from_income
+        SelectColumnEnum.expenses_list_from_income
       ),
-      expenses_list_from_subsidize: getList(
+      expenses_list_from_subsidize: getListBudget(
         result,
-        SelectColumn.expenses_list_form_subsidize
+        SelectColumnEnum.expenses_list_form_subsidize
       ),
-      refund_list: getList(result, SelectColumn.refund_list_from_income),
+      refund_list: getListBudget(
+        result,
+        SelectColumnEnum.refund_list_from_income
+      ),
     };
   }
 
@@ -94,11 +76,85 @@ export class BudgetService {
     const result = _.map(result_raw.slice(1), (row) => {
       const obj = {};
       headers.forEach((header: string, index) => {
-        obj[replaceAll(header, " ", "_").toLowerCase()] = ["Price per pcs.","Pcs.","Total"].includes(header) ? parseFloat(row[index].replace(",", "") ?? 0) : row[index];
+        obj[replaceAll(header, " ", "_").toLowerCase()] = [
+          "Price per pcs.",
+          "Pcs.",
+          "Total",
+        ].includes(header)
+          ? parseFloat(row[index].replace(",", "") ?? 0)
+          : row[index];
       });
       return obj;
     });
 
     return result;
+  }
+
+  async getProjects() {
+    const result_raw: any = await cachingSheet(
+      "Projects!A:K",
+      "budget_projects",
+      this.sheets_service,
+      this.cacheManager
+    );
+
+    const headers = result_raw
+      .shift()
+      .map((header) => replaceAll(header, " ", "_").toLowerCase());
+    const result = result_raw.slice(2).map((row) => {
+      const obj: any = _.zipObject(headers, row);
+      obj.income = parseFloat(replaceAll(String(obj.income), ",", "") ?? "0");
+      obj.spent = parseFloat(replaceAll(String(obj.spent), ",", "") ?? "0");
+      obj.remaining = parseFloat(
+        replaceAll(String(obj.remaining), ",", "") ?? "0"
+      );
+      return obj;
+    });
+    return result;
+  }
+
+  async getActivities() {
+    const result_raw: any = await cachingSheet(
+      "Activities!A:H",
+      "budget_activities",
+      this.sheets_service,
+      this.cacheManager
+    );
+
+    const headers = result_raw
+      .shift()
+      .map((header) => replaceAll(header, " ", "_").toLowerCase());
+    const result = result_raw.map((row) => {
+      const obj: any = _.zipObject(headers, row);
+      obj.income = parseFloat(replaceAll(String(obj.income), ",", "") ?? "0");
+      obj.spent = parseFloat(replaceAll(String(obj.spent), ",", "") ?? "0");
+      obj.remaining = parseFloat(
+        replaceAll(String(obj.remaining), ",", "") ?? "0"
+      );
+      return obj;
+    });
+    return result;
+  }
+
+  async getIncome() {
+    const result_raw: any = await cachingSheet(
+      "Income!A:G",
+      "budget_income",
+      this.sheets_service,
+      this.cacheManager
+    );
+    const headers = result_raw
+      .shift()
+      .map((header) => replaceAll(header, " ", "_").toLowerCase());
+    const result2 = [];
+    result_raw.map((row) => {
+      if (row.length <= 0 || row[0].length <= 0) {
+        return;
+      }
+      const obj: any = _.zipObject(headers, row);
+      obj.income = parseFloat(replaceAll(String(obj.income), ",", "") ?? "0");
+      result2.push(obj);
+    });
+    return result2;
   }
 }
